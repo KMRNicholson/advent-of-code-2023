@@ -1,1 +1,3 @@
 **/input.txt
+*.code-workspace
+__pycache__
