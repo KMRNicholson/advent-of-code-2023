@@ -59,22 +59,29 @@ const checkForNumbers = (schematic, limits, coordinates) => {
   const yRange = rangeOfMotion(yLimit, y);
 
   let schematicCopy = schematic;
-  let numbers = [];
+  let partData = {
+    part: schematic[y][x],
+    numbers: [],
+    numbersFound: 0,
+  };
+
   yRange.forEach((y) => {
     xRange.forEach((x) => {
       if (checkForNumber(schematicCopy[y][x])) {
+        partData.numbersFound++;
         let [number, start, end] = parseNumber(schematicCopy[y], x);
         let newLine = markNumber(schematicCopy[y], start, end);
         schematicCopy[y] = newLine;
-        numbers = [...numbers, number];
+        partData.numbers = [...partData.numbers, number];
       }
     });
   });
 
-  return [numbers, schematicCopy];
+  return [partData, schematicCopy];
 };
 
 module.exports = {
   checkForSymbol,
   checkForNumbers,
+  checkForGear,
 };

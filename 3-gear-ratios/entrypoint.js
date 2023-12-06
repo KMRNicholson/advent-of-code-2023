@@ -8,7 +8,8 @@ initSchematicFromFile(process.argv[2]).then((schematic) => {
 const main = (schematic) => {
   const limits = { xLimit: schematic[0].length, yLimit: schematic.length };
 
-  let sum = 0;
+  let partNumberSum = 0;
+  let gearRatioSum = 0;
   let y = 0;
   while (y < schematic.length) {
     let x = 0;
@@ -18,19 +19,30 @@ const main = (schematic) => {
       symbolFound = schematicService.checkForSymbol(schematic[y][x]);
 
       if (symbolFound) {
-        const [numbers, newSchematic] = schematicService.checkForNumbers(
+        const [partData, newSchematic] = schematicService.checkForNumbers(
           schematic,
           limits,
           coordinates
         );
 
         schematic = newSchematic;
-        sum += numbers.reduce((acc, num) => (acc += num), 0);
+        partNumberSum += partData.numbers.reduce((acc, num) => (acc += num), 0);
+
+        if (
+          schematicService.checkForGear(partData.part) &&
+          partData.numbersFound === 2
+        ) {
+          gearRatioSum += partData.numbers.reduce(
+            (acc, num) => (acc = acc * num),
+            1
+          );
+        }
       }
       x++;
     }
     y++;
   }
 
-  console.log(`sum of all part numbers was found to be: ${sum}`);
+  console.log(`sum of part numbers was found to be: ${partNumberSum}`);
+  console.log(`gear ratio was found to be: ${gearRatioSum}`);
 };
