@@ -1,0 +1,12 @@
+{
+  "name": "3-gear-ratios",
+  "version": "1.0.0",
+  "description": "advent code day 3",
+  "main": "entrypoint.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
