@@ -1,4 +1,5 @@
 **/input.txt
+**/small-input.txt
 *.code-workspace
 __pycache__
 bin
