@@ -60,35 +60,37 @@ public class ScratchCard
 
     public List<int> UserNumbers { get; }
 
+    public int Copies { get; set; }
+
     public ScratchCard()
     {
         WinningNumbers = new List<int>();
         UserNumbers = new List<int>();
     }
 
-    public ScratchCard(int id, List<int> winningNumbers, List<int> userNumbers)
+    public ScratchCard(int id, List<int> winningNumbers, List<int> userNumbers, int copies=1)
     {
         Id = id;
         WinningNumbers = winningNumbers;
         UserNumbers = userNumbers;
+        Copies = copies;
     }
 
-    public double GetPoints()
+    public ScratchCard DeepClone()
     {
-        double points = 0;
-        var exponent = 0;
-        var baseNumber = 2;
-
-        foreach (var userNumber in UserNumbers)
+        var winningNumbers = new List<int>();
+        foreach (var number in WinningNumbers)
         {
-            if(WinningNumbers.Contains(userNumber))
-            {
-                points = Math.Pow(baseNumber, exponent);
-                exponent++;
-            }
+            winningNumbers.Add(number);
         }
 
-        return points;
+        var userNumbers = new List<int>();
+        foreach (var number in UserNumbers)
+        {
+            userNumbers.Add(number);
+        }
+
+        return new ScratchCard(Id, winningNumbers, userNumbers, Copies);
     }
 
     public override string ToString()
@@ -106,6 +108,8 @@ public class ScratchCard
             userNumbers += $"{number} ";
         }
 
-        return $"{cardId}{winningNumbers}{userNumbers}";
+        var copies = $"Copies {Copies}";
+
+        return $"{cardId}{winningNumbers}{userNumbers}{copies}";
     }
 }
