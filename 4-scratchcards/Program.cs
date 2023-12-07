@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Services.ScratchCardBuilder;
+using Services.ScratchCardEvaluator;
 
 if (args.Length == 0)
 {
@@ -16,11 +17,19 @@ foreach (var line in File.ReadLines(cardDataPath))
     cards.Add(card);
 }
 
-var sum = 0.0;
+var sumOfPoints = 0.0;
 foreach (var card in cards)
 {
-    var points = card.GetPoints();
-    sum += points;
+    sumOfPoints += ScratchCardEvaluator.GetPoints(card);
 }
 
-Console.WriteLine("The sum of all card game points was found to be: " + sum);
+var pileOfCards = ScratchCardEvaluator.GetDuplicates(cards);
+
+var sumOfCopies = 0;
+foreach (var card in pileOfCards)
+{
+    sumOfCopies += card.Copies;
+}
+
+Console.WriteLine("The sum of all card game points was found to be: " + sumOfPoints);
+Console.WriteLine("The sum of all duplicates was found to be: " + sumOfCopies);
