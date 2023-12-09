@@ -14,21 +14,43 @@ module Almanac
         return content_string.split(':')
     end
 
+    def parse_seed_data(contents)
+        return seeds_data = contents[1].gsub("#{NEW_LINE}", '').split(' ')
+    end
+
+    def parse_seed_map(raw_contents, factor=1)
+        contents = convert_to_machine_readable(raw_contents)
+
+        seeds_data = parse_seed_data(contents)
+
+        mappings = []
+        i = 0
+        while(i < seeds_data.length)
+            source_index = (seeds_data[i].to_f) / factor
+            range = (seeds_data[i+1].to_f) / factor
+            destination_index = 0
+            mappings += [Mapping.new(source_index, destination_index, range)]
+            i += 2
+        end
+
+        return [Map.new('bag', 'seed', mappings)]
+    end
+
     def parse_seeds(raw_contents)
         contents = convert_to_machine_readable(raw_contents)
 
-        seeds = contents[1].gsub("#{NEW_LINE}", '').split(' ').map do |line|
+        seeds = parse_seed_data(contents).map do |line|
             Seed.new(line.to_i)
         end
 
         return seeds
     end
 
-    def parse_maps(raw_contents)
+    def parse_maps(raw_contents, parse_seed_maps=false, factor=1)
         contents = convert_to_machine_readable(raw_contents)
         map_contents = contents[2..contents.length()]
         
-        maps = []
+        maps = parse_seed_maps ? parse_seed_map(raw_contents, factor) : []
         i = 0
         while i < map_contents.length()
             source = map_contents[i].gsub(' map', '').split('-')[0]
@@ -38,9 +60,9 @@ module Almanac
             mappings = []
             mappings += mapping_data.map do |mapping|
                 map = mapping.split(' ')
-                source_index = map[1].to_i
-                destination_index = map[0].to_i
-                range = map[2].to_i
+                source_index = (map[1].to_f) / factor
+                destination_index = (map[0].to_f) / factor
+                range = (map[2].to_f) / factor
                 Mapping.new(source_index, destination_index, range)
             end
 
@@ -48,6 +70,54 @@ module Almanac
             i += 2
         end
         return maps
+    end
+
+    def get_lowest_location_by_seed(seeds, maps)
+        destinations = ['soil', 'fertilizer', 'water', 'light', 'temperature', 'humidity', 'location']
+        seeds.each do |seed|
+            source = seed.get_id()
+            
+            destinations.each do |destination|
+                map = get_map_by_destination(maps, destination).first
+                source = map.source_to_destination(source)
+            end
+
+            seed.set_location(source)
+        end
+
+        seeds.sort_by! { |a| a.get_location() }
+        return seeds.first
+    end
+
+    def get_lowest_location_by_location(maps, factor=1)
+        destinations = ['location', 'humidity', 'temperature', 'light', 'water', 'fertilizer', 'soil', 'seed']
+
+        mapping = get_map_by_destination(maps, 'location').first.get_mappings().sort_by!{|a|a.get_destination_index()}.last
+        stop = mapping.get_destination_index() + mapping.get_range()
+        puts "Stop after #{stop} loops"
+        starting = Time.now
+        i = 0
+        while(i < stop)
+            nextDest=i
+            destinations.each do |destination|
+                map = get_map_by_destination(maps, destination).first
+                if(destination == 'seed') then
+                    if(map.within_source_range?(nextDest)) then
+                        puts "The location #{i * factor} was matched to seed #{nextDest * factor}! Exiting."
+                        return (i * factor)
+                    end
+                end
+                nextDest = map.destination_to_source(nextDest)
+            end
+            i += 1
+            if(i % 100000 == 0) then
+                ending = Time.now
+                elapsed = ending - starting
+                puts "on location: #{i}  elapsed time: #{elapsed}"
+            end
+        end
+        
+        return nil
     end
 
     def get_map_by_destination(maps, destination)
@@ -94,24 +164,6 @@ module Almanac
         def get_destination_index()
             return @destination_index
         end
-
-        def get_source_range()
-            return (@source_index..(@source_index+@range-1)).to_a
-        end
-
-        def get_destination_range()
-            return (@destination_index..(@destination_index+@range-1)).to_a
-        end
-
-        def get_mapping()
-            source_range = get_source_range()
-            destination_range = get_destination_range()
-            map = Hash.new
-            for i in (0..@range-1) do
-                map[source_range[i]] = destination_range[i]
-            end
-            return map
-        end
     end
 
     class Map
@@ -133,10 +185,15 @@ module Almanac
             return @mappings
         end
 
-        def combine()
-            combined_map = Hash.new
-            get_mappings().each { |mapping| combined_map.merge!(mapping.get_mapping()) }
-            return combined_map
+        def within_source_range?(value)
+            get_mappings.each do |mapping|
+                lowerBound = mapping.get_source_index()
+                upperBound = lowerBound + mapping.get_range()
+                if(value >= lowerBound && value <= upperBound) then
+                    return true
+                end
+            end
+            return false
         end
 
         def source_to_destination(source)
@@ -149,6 +206,18 @@ module Almanac
                 end
             end
             return destination
+        end
+
+        def destination_to_source(destination)
+            source = destination
+            get_mappings.each do |mapping|
+                lowerBound = mapping.get_destination_index()
+                upperBound = lowerBound + mapping.get_range()
+                if(destination >= lowerBound && destination <= upperBound) then
+                    source = mapping.get_source_index() + (destination - lowerBound)
+                end
+            end
+            return source
         end
     end
 end
