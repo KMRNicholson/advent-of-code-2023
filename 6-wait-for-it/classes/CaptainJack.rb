@@ -1,4 +1,11 @@
 module CaptainJack
+    def get_race(raw_contents)
+        time = raw_contents[0].split(':')[1].gsub(' ', '').to_i
+        record_distance = raw_contents[1].split(':')[1].gsub(' ', '').to_i
+        
+        return Race.new(record_distance, time)
+    end
+
     def get_races(raw_contents)
         times = raw_contents[0].split(':')[1].split(' ').reject { |entry| entry == '' }
         distances = raw_contents[1].split(':')[1].split(' ').reject { |entry| entry == '' }
@@ -13,21 +20,27 @@ module CaptainJack
         return races
     end
 
+    def find_win_possibilities(race, boat)
+        record_distance = race.get_record_distance()
+        race_time = race.get_time()
+
+        win_possibilities = 0
+        for ms in (1..race_time) do
+            boat.power_up(ms)
+            time_left = race_time - ms
+            distance = boat.get_distance(time_left)
+            if(distance > record_distance) then
+                win_possibilities += 1
+            end
+        end
+
+        return win_possibilities
+    end
+
     def find_product_of_win_possibilities(races, boat)
         product = 1
         races.each do |race|
-            record_distance = race.get_record_distance()
-            race_time = race.get_time()
-
-            win_possibilities = 0
-            for ms in (1..race_time) do
-                boat.power_up(ms)
-                time_left = race_time - ms
-                distance = boat.get_distance(time_left)
-                if(distance > record_distance) then
-                    win_possibilities += 1
-                end
-            end
+            win_possibilities = find_win_possibilities(race, boat)
             product *= win_possibilities
         end
 
